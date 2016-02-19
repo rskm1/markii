@@ -87,6 +87,19 @@ def getframes(app_root=""):
         for item in items:
             frame, filename, line, func, lines, _ = item
             app_local = filename.startswith(app_root)
+
+            # Check for non-Python code BEFORE trying/failing to parse it!
+            if not filename.lower().endswith(".py"):
+                # This isn't Python code (possibly a Jinja2 renderer exception),
+                # so just cobble-up a bare-bones Frame for it, since the
+                # tokenizer would CRASH trying to parse it as Python code.
+                frames.append(Frame(
+                    func, {}, None, {},
+                    filename, (), line, lines, app_local
+                ))
+                continue
+
+            # It's Python code, so parse out lots of cool extra goodies.
             f_locals = frame.f_locals
             try:
                 lines = [l.strip() for l in lines]
